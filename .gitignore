@@ -1,0 +1,30 @@
+# Dependencies
+/node_modules
+
+# Build
+/dist
+/tmp
+/out-tsc
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment files with secrets
+src/environments/environment.ts
+src/environments/environment.prod.ts
+.env
+.env.local
+.env.production
+
+# Supabase
+supabase/.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Angular cache
+.angular/

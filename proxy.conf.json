@@ -1,0 +1,10 @@
+{
+  "/simple-api": {
+    "target": "https://tramites.slepvalparaiso.gob.cl",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/simple-api": ""
+    }
+  }
+}
