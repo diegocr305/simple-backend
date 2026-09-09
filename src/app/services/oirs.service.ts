@@ -13,16 +13,22 @@ import {
   providedIn: 'root',
 })
 export class OirsService {
-  private readonly TABLE = 'seguimiento_oirs_siac';
+  // Vista del modelo V4 (esquema oirs) con el mismo contrato que el frontend espera.
+  private readonly SCHEMA = 'oirs';
+  private readonly TABLE = 'v_seguimiento';
 
   constructor(private supabaseService: SupabaseService) {}
+
+  /** Helper: query builder apuntando al esquema/vista correctos */
+  private from() {
+    return this.supabaseService.client.schema(this.SCHEMA).from(this.TABLE);
+  }
 
   /**
    * Obtener resumen para dashboard
    */
   async getResumen(): Promise<ResumenDashboard> {
-    const { data, error } = await this.supabaseService.client
-      .from(this.TABLE)
+    const { data, error } = await this.from()
       .select('estado_funcional');
 
     if (error) throw error;
@@ -50,8 +56,7 @@ export class OirsService {
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
 
-    let query = this.supabaseService.client
-      .from(this.TABLE)
+    let query = this.from()
       .select('*', { count: 'exact' });
 
     // Aplicar filtros
@@ -105,8 +110,7 @@ export class OirsService {
    * Obtener detalle de un trámite por ID
    */
   async getDetalle(id: string): Promise<SeguimientoOirs | null> {
-    const { data, error } = await this.supabaseService.client
-      .from(this.TABLE)
+    const { data, error } = await this.from()
       .select('*')
       .eq('id', id)
       .single();
@@ -120,8 +124,7 @@ export class OirsService {
    * Obtener áreas derivadas únicas (para filtro)
    */
   async getAreasDerivadas(): Promise<string[]> {
-    const { data, error } = await this.supabaseService.client
-      .from(this.TABLE)
+    const { data, error } = await this.from()
       .select('area_derivada')
       .not('area_derivada', 'is', null);
 
@@ -135,8 +138,7 @@ export class OirsService {
    * Obtener conteo por etapa para dashboard
    */
   async getConteoPorEtapa(): Promise<{ etapa_actual_nombre: string; count: number }[]> {
-    const { data, error } = await this.supabaseService.client
-      .from(this.TABLE)
+    const { data, error } = await this.from()
       .select('etapa_actual_nombre');
 
     if (error) throw error;
@@ -157,8 +159,7 @@ export class OirsService {
    * Exportar todos los datos filtrados para CSV
    */
   async exportar(filtros: FiltroSeguimiento): Promise<SeguimientoOirs[]> {
-    let query = this.supabaseService.client
-      .from(this.TABLE)
+    let query = this.from()
       .select('*');
 
     if (filtros.etapa_id) {
@@ -185,24 +186,4 @@ export class OirsService {
     return data as SeguimientoOirs[];
   }
 
-  /**
-   * Trigger manual sync (llama a la Edge Function)
-   */
-  async triggerSync(): Promise<{ success: boolean; message: string }> {
-    try {
-      const { data, error } = await this.supabaseService.client.functions.invoke('sync-oirs', {
-        body: { manual: true },
-      });
-
-      if (error) {
-        console.error('Edge Function error:', error);
-        return { success: false, message: error.message || 'Error en sincronizacion' };
-      }
-
-      return data || { success: true, message: 'Sincronizacion completada' };
-    } catch (err) {
-      console.error('triggerSync catch:', err);
-      return { success: false, message: String(err) };
-    }
-  }
 }

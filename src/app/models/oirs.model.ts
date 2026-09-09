@@ -46,11 +46,13 @@ export interface EtapaSimple {
   orden: number;
 }
 
+// Etapas del proceso SIMPLE 22 (OIRS/SIAC V4)
 export const ETAPAS_OIRS: EtapaSimple[] = [
   { id: 54, nombre: 'Ingreso de Solicitud', orden: 1 },
   { id: 55, nombre: 'Revisión de Requerimiento', orden: 2 },
-  { id: 56, nombre: 'Derivación de solicitud', orden: 3 },
+  { id: 58, nombre: 'Derivación de solicitud', orden: 3 },
   { id: 57, nombre: 'Revisión Final Oficina de Partes', orden: 4 },
+  { id: 56, nombre: 'Solicitud Aprobada', orden: 5 },
 ];
 
 export interface ResumenDashboard {
