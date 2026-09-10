@@ -12,12 +12,14 @@
 *.swp
 *.swo
 
-# Environment files with secrets
-src/environments/environment.ts
-src/environments/environment.prod.ts
+# Environment files with real secrets (NO versionar)
 .env
 .env.local
 .env.production
+
+# NOTA: src/environments/*.ts SI se versionan. Solo contienen la URL de Supabase
+# y la anon key, que son PUBLICAS por diseno. El token de SIMPLE y la service_role
+# viven solo en los secrets de las Edge Functions, nunca en el frontend.
 
 # Supabase
 supabase/.env
