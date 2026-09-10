@@ -413,3 +413,54 @@ autofirmado. Salta Cloudflare y va directo al origen. Borrar la linea al termina
 - Cuando el .gob.cl este estable, dejar el 17 como redirect (no sirviendo la app).
 - Versionar los server blocks 16 y 17 en el repo (carpeta de referencia) si se
   quiere tenerlos bajo control de versiones.
+
+---
+
+# 14. Caso 522 residual del .gob.cl (pendiente de Cloudflare)
+
+## Situacion (2026-09-10)
+- `oirs.slepvalparaiso.cl` -> FUNCIONA (app carga y opera OK).
+- `oirs.slepvalparaiso.gob.cl` -> Error 522 de Cloudflare.
+
+## Diagnostico (verificado, NO es el servidor)
+El origen 54.86.236.154 responde **HTTP 200 OK** para el host oirs por TODAS las vias:
+- localhost, IPv4 publica y IPv6 publica -> 200 OK.
+- `matricula.slepvalparaiso.gob.cl` (mismo server, DNS identico a oirs) funciona.
+- `dig` de oirs y matricula devuelven las MISMAS IPs A y AAAA de Cloudflare.
+- El 522 lo genera Cloudflare en tiempo real (header `cache-control: no-cache`),
+  NO es cache: Cloudflare no logra conectar al origen para el hostname oirs.
+
+Como el DNS publico es identico a matricula pero solo oirs falla, la causa esta en
+el **contenido del registro de oirs dentro del panel de Cloudflare** (zona .gob.cl,
+delegada a la cuenta Cloudflare gestionada por el proveedor Andestic / David
+Rodriguez). Probablemente el registro A/AAAA de oirs apunta a un origen distinto a
+54.86.236.154, o difiere del de matricula.
+
+## Zonas Cloudflare (contexto importante)
+- `.gob.cl`: delegada COMPLETAMENTE a los DNS de Cloudflare del SLEP (gestionada por
+  Andestic). NS: gordon.ns.cloudflare.com / sima.ns.cloudflare.com. El alta se
+  tramita por formulario ante la ANCI, pero la gestion DNS/Cloudflare es del SLEP,
+  NO del gobierno. => se resuelve con el proveedor, no con ANCI.
+- `.cl`: otra zona/cuenta Cloudflare (IPs de origen distintas), en modo Full,
+  acepta el cert autofirmado -> por eso funciona.
+
+## Accion tomada
+Se envio correo a David Rodriguez (proveedor) pidiendo revisar el registro de oirs
+en el panel de Cloudflare y dejarlo identico a matricula (A -> 54.86.236.154, sin
+AAAA a destino muerto, mismo proxy/SSL, y Purge Everything). Pendiente de respuesta.
+
+## Mientras tanto
+Se opera con `oirs.slepvalparaiso.cl`. El server block 17 esta sirviendo la app
+directo (no redirect) como plan B. Cuando el .gob.cl funcione, volver el 17 a
+redirect 301 -> .gob.cl (ver seccion 13.9).
+
+## Auth (Supabase) para ambos dominios
+En Supabase > Authentication > URL Configuration > Redirect URLs, agregar:
+- https://oirs.slepvalparaiso.cl/auth/callback
+- https://oirs.slepvalparaiso.gob.cl/auth/callback
+- https://oirs.slepvalparaiso.cl/
+- https://oirs.slepvalparaiso.gob.cl/
+El login usa `redirectTo: ${window.location.origin}/auth/callback` (auth.service.ts),
+por eso ambos dominios deben estar autorizados. NO cambiar el Site URL (es global del
+proyecto compartido). Google OAuth no requiere cambios (su callback apunta a Supabase,
+ya configurado para los otros sitios).
